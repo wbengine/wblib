@@ -2,7 +2,7 @@ import os, sys
 import numpy as np
 
 import StringIO
-from . import wblib as wb
+import wblib as wb
 
 
 class NBest(object):
