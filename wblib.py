@@ -1322,7 +1322,7 @@ def filter_text(input, output, sed_filter_file=None):
     input_lines = []
     with open(input) as f:
         for line in f:
-            input_lines.append(' ' + ' '.join(line.split()) + ' ')
+            input_lines.append('  ' + '  '.join(line.split()) + '  ')
 
     sed_filter_file = sed_filter_file if sed_filter_file else os.path.join(os.path.dirname(__file__), 'wer_hyp_filter')
     p = subprocess.Popen('sed -f {}'.format(sed_filter_file), stdin=subprocess.PIPE, stdout=open(output, 'wt'), shell=True)
