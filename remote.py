@@ -6,6 +6,14 @@ import os, subprocess, sys
 import collections
 
 
+ali_ssh = 'datauser@10.102.50.73'
+
+
+def riseml_path_to_ssh_path(s):
+    s = '/riseml' + s  # add riseml
+    s = s.replace('/workspace/', '/workspace/engine/')  # add user name
+    return s
+
 def mkdirs(path):
     if not os.path.exists(path):
         os.makedirs(path)
@@ -59,6 +67,7 @@ def ssh_find_the_latest_file(host, find_dir, find_name, time_tag='Modify'):
 
 def download(host, remote_path, local_path):
     os.system('rsync -av {}:{} {}'.format(host, remote_path, local_path))
+    return os.path.join(local_path, os.path.split(remote_path)[-1])
 
 
 def download_ckpt(host, ckpt_dir, ckpt_name='*.ckpt', local_dir='.'):

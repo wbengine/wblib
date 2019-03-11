@@ -1,7 +1,10 @@
 import os, sys
 import numpy as np
 
-import StringIO
+try:
+    import StringIO
+except ModuleNotFoundError:
+    from io import BytesIO as StringIO
 import wblib as wb
 
 

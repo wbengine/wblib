@@ -52,6 +52,10 @@ def mkdir(path, is_recreate=False, force=False):
     return path
 
 
+def path_filename(path):
+    return os.path.split(path)[-1]
+
+
 def mklogdir(path, logname='trf.log', is_recreate=False, force=False):
     mkdir(path, is_recreate, force)
     sys.stdout = std_log(os.path.join(path, logname))
