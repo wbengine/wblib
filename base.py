@@ -52,8 +52,12 @@ def mkdir(path, is_recreate=False, force=False):
     return path
 
 
-def path_filename(path):
-    return os.path.split(path)[-1]
+# get the file name
+def path_file_name(path, rm_suffix=False):
+    s = os.path.split(path)[-1]
+    if rm_suffix:
+        s = os.path.splitext(s)[0]
+    return s
 
 
 def mklogdir(path, logname='trf.log', is_recreate=False, force=False):
@@ -1340,3 +1344,44 @@ def audio_duration(path):
         if line.lower().startswith('length (seconds):'):
             return float(line.split()[-1])
     raise TypeError('sox ERROR: \n{}'.format(s))
+
+
+def generate_wp(wp_tools_dir, text_list_or_file, bpe_codes, vocabulary=None, output_file=None, to_lower=False):
+    """
+    Args:
+        wp_tools_dir:
+        text_list_or_file:
+        bpe_codes:
+        vocabulary:
+        output_file: if None, then return a txt list
+        to_lower: if True, then convert text to lower
+
+    Returns:
+
+    """
+    cmd_str = os.path.join(wp_tools_dir, 'apply_bpe.py')
+    cmd_str += ' -c ' + bpe_codes
+    if vocabulary is not None:
+        cmd_str += ' --vocabulary ' + vocabulary
+
+    if to_lower:
+        cmd_str = "tr '[:upper:]' '[:lower:]' | " + cmd_str
+
+    if output_file is None:
+        stdout = subprocess.PIPE
+    else:
+        stdout = open(output_file, 'wt')
+
+    if isinstance(text_list_or_file, str):
+        # a file
+        p = subprocess.Popen(cmd_str, stdin=open(text_list_or_file, 'rt'), stdout=stdout, shell=True)
+        pout, _ = p.communicate()
+    else:
+        # a text list
+        p = subprocess.Popen(cmd_str, stdin=subprocess.PIPE, stdout=stdout, shell=True)
+        pout, _ = p.communicate('\n'.join(text_list_or_file))
+
+    if pout:
+        return pout.decode().strip().split('\n')
+    else:
+        return ""
