@@ -464,72 +464,160 @@ def LLInc2PPL(LLInc, obj1, obj2):
     return 1 - np.exp(-LLInc * nLine / (nLine + nWord))
 
 
-# TxtScore: compare two word sequence (array), and return the error number
-def TxtScore(target, base):
-    res = {'word': 0, 'err': 0, 'none': 0, 'del': 0, 'ins': 0, 'rep': 0, 'target': [], 'base': []}
+# compare two word sequence (array), and return the error number
+def TxtScore(hypos, refer, special_word=None):
+    """
+    compute the err number
 
-    target = deepcopy(target)
-    base = deepcopy(base)
+    For example:
 
-    target.insert(0, '<s>')
-    target.append('</s>')
-    base.insert(0, '<s>')
-    base.append('</s>')
-    nTargetLen = len(target)
-    nBaseLen = len(base)
+        refer = A B C
+        hypos = X B V C
 
-    if nTargetLen == 0 or nBaseLen == 0:
+        after alignment
+
+        refer = ~A B ^  C
+        hypos = ~X B ^V C
+        err number = 2
+
+        where ~ denotes replacement error, ^ denote insertion error, * denotes deletion error.
+
+    if set the special_word (not None), then the special word in reference can match any words in hypothesis.
+    For example:
+        refer = 'A <?> C'
+        hypos = 'A B C D C'
+
+        after aligment:
+
+        refer =  A   <?> C
+        hypos =  A B C D C
+
+        where <?> matches 'B C D'. error number = 0
+
+    Usage:
+        ```
+        refer = 'A <?> C'
+        hypos = 'A B C D C'
+
+        res = wer.wer(refer, hypos, '<?>')
+        print('err={}'.format(res['err']))
+        print('ins={ins} del={del} rep={rep}'.format(**res))
+        print('refer = {}'.format(' '.join(res['refer'])))
+        print('hypos = {}'.format(' '.join(res['hypos'])))
+        ```
+
+
+
+    :param refer: a string or a list of words
+    :param hypos: a string or a list of hypos
+    :param special_word: this word in reference can match any words
+    :return:
+        a result dict, including:
+        res['word']: word number
+        res['err']:  error number
+        res['del']:  deletion number
+        res['ins']:  insertion number
+        res['rep']:  replacement number
+        res['hypos']: a list of words, hypothesis after alignment
+        res['refer']: a list of words, reference after alignment
+    """
+
+    res = {'word': 0, 'err': 0, 'none': 0, 'del': 0, 'ins': 0, 'rep': 0, 'hypos': [], 'refer': []}
+
+    refer_words = refer if isinstance(refer, list) else refer.split()
+    hypos_words = hypos if isinstance(hypos, list) else hypos.split()
+
+    hypos_words.insert(0, '<s>')
+    hypos_words.append('</s>')
+    refer_words.insert(0, '<s>')
+    refer_words.append('</s>')
+
+    hypos_len = len(hypos_words)
+    refer_len = len(refer_words)
+
+    if hypos_len == 0 or refer_len == 0:
         return res
 
-    aNext = [[0, 1], [1, 1], [1, 0]]
-    aDistTable = [([['none', 10000, [-1, -1], '', '']] * nBaseLen) for i in range(nTargetLen)]
-    aDistTable[0][0] = ['none', 0, [-1, -1], '', '']  # [error-type, note distance, best previous]
+    go_nexts = [[0, 1], [1, 1], [1, 0]]
+    score_table = [([['none', 10000, [-1, -1], '', '']] * refer_len) for i in range(hypos_len)]
+    score_table[0][0] = ['none', 0, [-1, -1], '', '']  # [error-type, note distance, best previous]
 
-    for i in range(nTargetLen - 1):
-        for j in range(nBaseLen):
-            for dir in aNext:
-                nexti = i + dir[0]
-                nextj = j + dir[1]
-                if nexti >= nTargetLen or nextj >= nBaseLen:
+    for i in range(hypos_len - 1):
+        for j in range(refer_len):
+            for go_nxt in go_nexts:
+                nexti = i + go_nxt[0]
+                nextj = j + go_nxt[1]
+                if nexti >= hypos_len or nextj >= refer_len:
                     continue
 
-                nextScore = aDistTable[i][j][1]
-                nextState = 'none'
-                nextTarget = ''
-                nextBase = ''
-                if dir == [0, 1]:
-                    nextState = 'del'
-                    nextScore += 1
-                    nextTarget = '*' + ' ' * len(base[nextj])
-                    nextBase = '*' + base[nextj]
-                elif dir == [1, 0]:
-                    nextState = 'ins'
-                    nextScore += 1
-                    nextTarget = '^' + target[nexti]
-                    nextBase = '^' + ' ' * len(target[nexti])
+                next_score = score_table[i][j][1]
+                next_state = 'none'
+                next_hypos = ''
+                next_refer = ''
+
+                if go_nxt == [0, 1]:
+                    next_state = 'del'
+                    next_score += 1
+                    next_hypos = '*' + ' ' * len(refer_words[nextj])
+                    next_refer = '*' + refer_words[nextj]
+
+                elif go_nxt == [1, 0]:
+                    next_state = 'ins'
+                    next_score += 1
+                    next_hypos = '^' + hypos_words[nexti]
+                    next_refer = '^' + ' ' * len(hypos_words[nexti])
+
                 else:
-                    nextTarget = target[nexti]
-                    nextBase = base[nextj]
-                    if target[nexti] != base[nextj]:
-                        nextState = 'rep'
-                        nextScore += 1
-                        nextTarget = '~' + nextTarget
-                        nextBase = '~' + nextBase
+                    if special_word is not None and refer_words[nextj] == special_word:
+                        for ii in range(i+1, hypos_len-1):
+                            next_score += 0  # can match any words, without penalty
+                            next_state = 'none'
+                            next_refer = special_word
+                            next_hypos = ' '.join(hypos_words[i+1:ii+1])
 
-                if nextScore < aDistTable[nexti][nextj][1]:
-                    aDistTable[nexti][nextj] = [nextState, nextScore, [i, j], nextTarget, nextBase]
+                            if next_score < score_table[ii][nextj][1]:
+                                score_table[ii][nextj] = [next_state, next_score, [i, j], next_hypos, next_refer]
 
-    res['err'] = aDistTable[nTargetLen - 1][nBaseLen - 1][1]
-    res['word'] = nBaseLen - 2
-    i = nTargetLen - 1
-    j = nBaseLen - 1
+                        # avoid add too many times
+                        next_score = 10000
+
+                    else:
+                        next_hypos = hypos_words[nexti]
+                        next_refer = refer_words[nextj]
+                        if hypos_words[nexti] != refer_words[nextj]:
+                            next_state = 'rep'
+                            next_score += 1
+                            next_hypos = '~' + next_hypos
+                            next_refer = '~' + next_refer
+
+                if next_score < score_table[nexti][nextj][1]:
+                    score_table[nexti][nextj] = [next_state, next_score, [i, j], next_hypos, next_refer]
+
+    res['err'] = score_table[hypos_len - 1][refer_len - 1][1]
+    res['word'] = refer_len - 2
+    i = hypos_len - 1
+    j = refer_len - 1
+    refer_fmt_words = []
+    hypos_fmt_words = []
     while i >= 0 and j >= 0:
-        res[aDistTable[i][j][0]] += 1
-        res['target'].append(aDistTable[i][j][3])
-        res['base'].append(aDistTable[i][j][4])
-        [i, j] = aDistTable[i][j][2]
-    res['target'].reverse()
-    res['base'].reverse()
+        res[score_table[i][j][0]] += 1  # add the del/rep/ins error number
+        hypos_fmt_words.append(score_table[i][j][3])
+        refer_fmt_words.append(score_table[i][j][4])
+        [i, j] = score_table[i][j][2]
+
+    refer_fmt_words.reverse()
+    hypos_fmt_words.reverse()
+
+    # format the hypos and refer
+    assert len(refer_fmt_words) == len(hypos_fmt_words)
+    for i in range(len(refer_fmt_words)):
+        w = max(len(refer_fmt_words[i]), len(hypos_fmt_words[i]))
+        fmt = '{:>%d}' % w
+        refer_fmt_words[i] = fmt.format(refer_fmt_words[i])
+        hypos_fmt_words[i] = fmt.format(hypos_fmt_words[i])
+
+    res['refer'] = refer_fmt_words[0:-1]
+    res['hypos'] = hypos_fmt_words[0:-1]
 
     return res
 
