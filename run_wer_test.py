@@ -16,15 +16,15 @@ class Test(unittest.TestCase):
         self.nbest = local_dir + '/' + name + '.nbest'
         self.refer = local_dir + '/' + name + '.refer'
         self.best = local_dir + '/' + name + '.best'
-        self.log = local_dir + '/' + name + '.log'
+        self.log = local_dir + '/' + name + '.local.log'
 
         base.GetBest(self.nbest, None, self.best)
 
     def test(self):
 
-        os.system('python ./run_wer.py --best {} --refer {} --filter ./filters/wer_hyp_filter > {}'.format(
-            self.best, self.refer, self.log
-        ))
+        # os.system('python ./run_wer.py --best {} --refer {} --filter ./filters/wer_hyp_filter > {}'.format(
+        #     self.best, self.refer, self.log
+        # ))
 
         os.system('python ./run_wer.py --nbest {} --refer {} --filter ./filters/wer_hyp_filter > {}'.format(
             self.nbest, self.refer, self.log
