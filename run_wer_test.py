@@ -6,7 +6,7 @@ import remote
 
 class Test(unittest.TestCase):
     def setUp(self):
-        remote_dir = '/riseml/workspace/engine/exp/lls-new-data-v3-try1-wp500-adaptive-on-telis-chatbot/expr3-ce-ls0.05/1pass_recog/telis_test_v1-2-lp0.10-beam16-epoch0.80'
+        remote_dir = '/riseml/workspace/engine/exp/lls-new-data-v3-try1-wp500-adaptive-on-telis-chatbot/expr1-mwer/1pass_recog/chatbot_test_v3-lp0.10-beam16'
 
         local_dir = base.mkdir('/Users/lls/tmp/run_wer_test')
 

@@ -555,7 +555,7 @@ def TxtScore(hypos, refer, special_word=None):
 
     go_nexts = [[0, 1], [1, 1], [1, 0]]
     score_table = [([['none', 10000, [-1, -1], '', '']] * refer_len) for i in range(hypos_len)]
-    score_table[0][0] = ['none', 0, [-1, -1], '', '']  # [error-type, note distance, best previous]
+    score_table[0][0] = ['none', 0, [-1, -1], '<s>', '<s>']  # [error-type, note distance, best previous]
 
     for i in range(hypos_len - 1):
         for j in range(refer_len):
@@ -631,8 +631,8 @@ def TxtScore(hypos, refer, special_word=None):
         refer_fmt_words[i] = fmt.format(refer_fmt_words[i])
         hypos_fmt_words[i] = fmt.format(hypos_fmt_words[i])
 
-    res['refer'] = refer_fmt_words[0:-1]
-    res['hypos'] = hypos_fmt_words[0:-1]
+    res['refer'] = refer_fmt_words[1:-1]
+    res['hypos'] = hypos_fmt_words[1:-1]
 
     return res
 
@@ -675,8 +675,8 @@ def CmpWER(best, temp, log_str_or_io=None, sentence_process_fun=None, special_wo
         if fout is not None:
             fout.write('[{}] {}\n'.format(nLine, a[0]))
             fout.write('[nDist={0}] [{0}/{1}] [{2}/{3}]\n'.format(res['err'], res['word'], nTotalErr, nTotalWord))
-            fout.write('refer: ' + ''.join([i + ' ' for i in res['refer'][1:-1]]) + '\n')
-            fout.write('hypos: ' + ''.join([i + ' ' for i in res['hypos'][1:-1]]) + '\n')
+            fout.write('refer: ' + ''.join([i + ' ' for i in res['refer']]) + '\n')
+            fout.write('hypos: ' + ''.join([i + ' ' for i in res['hypos']]) + '\n')
             fout.flush()
 
         nLine += 1
