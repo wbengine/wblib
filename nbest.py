@@ -83,7 +83,8 @@ class NBest(object):
 
                 [totale, totalw, wer] = wb.CmpWER(best_file, self.trans,
                                                   log_str_or_io=log_file,
-                                                  sentence_process_fun=sentence_process_fun)
+                                                  sentence_process_fun=sentence_process_fun,
+                                                  special_word='<?>')
 
                 self.wer_per_scale.append([ac, lm, wer])
                 # print('acscale={}\tlmscale={}\twer={}\n'.format(acscale, lmscale, wer))
