@@ -787,16 +787,32 @@ def GetBest(nbest, score, best):
     """
 
     nbest_dict = nbest_read_to_dict(nbest)
-    score_dict = None if score is None else nbest_read_to_dict(score)
 
-    with open(best, 'wt') as fout:
+    if score is None:
+        score_dict = None
+    elif isinstance(score, str) and os.path.isfile(score):
+        score_dict = nbest_read_to_dict(score)
+    else:
+        # a list of scores
+        score_dict = OrderedDict()
+        i = 0
         for label, vals in nbest_dict.items():
-            if score_dict is not None:
-                s = score_dict[label]
-                i = np.argmin(s)
-            else:
-                i = 0
-            fout.write('{} {}\n'.format(label, vals[i]))
+            score_dict[label] = score[i: i+len(vals)]
+            i += len(vals)
+
+    # fout
+    fout = open(best, 'wt') if isinstance(best, str) else best
+
+    for label, vals in nbest_dict.items():
+        if score_dict is not None:
+            s = score_dict[label]
+            i = np.argmin(s)
+        else:
+            i = 0
+        fout.write('{} {}\n'.format(label, vals[i]))
+
+    if isinstance(best, str):
+        fout.close()
 
 
 # load the score file
@@ -1419,7 +1435,7 @@ def filter_text(input, output, sed_filter_file=None):
         for line in f:
             input_lines.append('  ' + '  '.join(line.split()) + '  ')
 
-    sed_filter_file = sed_filter_file if sed_filter_file else os.path.join(os.path.dirname(__file__), 'wer_hyp_filter')
+    sed_filter_file = sed_filter_file if sed_filter_file else os.path.join(os.path.dirname(__file__), 'filters/wer_hyp_filter')
     p = subprocess.Popen('sed -f {}'.format(sed_filter_file), stdin=subprocess.PIPE, stdout=open(output, 'wt'), shell=True)
     p.communicate('\n'.join(input_lines))
 

@@ -5,7 +5,7 @@ try:
     import StringIO
 except ModuleNotFoundError:
     from io import BytesIO as StringIO
-import wblib as wb
+import base as wb
 
 
 class NBest(object):
