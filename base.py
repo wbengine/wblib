@@ -639,7 +639,7 @@ def TxtScore(hypos, refer, special_word=None):
 
 
 # calculate the WER given best file
-def CmpWER(best, temp, log_str_or_io=None, sentence_process_fun=None):
+def CmpWER(best, temp, log_str_or_io=None, sentence_process_fun=None, special_word=None):
     nLine = 0
     nTotalWord = 0
     nTotalErr = 0
@@ -668,7 +668,7 @@ def CmpWER(best, temp, log_str_or_io=None, sentence_process_fun=None):
             target = sentence_process_fun(target)
             temp_sent = sentence_process_fun(temp_sent)
 
-        res = TxtScore(target, temp_sent)
+        res = TxtScore(target, temp_sent, special_word=special_word)
         nTotalErr += res['err']
         nTotalWord += res['word']
 

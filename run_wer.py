@@ -45,7 +45,7 @@ def main():
     print('compute WER')
     print('best = %s' % best_file)
     print('refer = %s' % refer_file)
-    err, word, wer = base.CmpWER(best_file, refer_file, sys.stdout)
+    err, word, wer = base.CmpWER(best_file, refer_file, sys.stdout, special_word=args.special_word)
 
     print('\n[Finished]')
     print('best = %s' % args.best)
