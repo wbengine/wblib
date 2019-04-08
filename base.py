@@ -464,6 +464,21 @@ def LLInc2PPL(LLInc, obj1, obj2):
     return 1 - np.exp(-LLInc * nLine / (nLine + nWord))
 
 
+# read nbest file into dict
+def nbest_read_to_dict(nbest_file, type=str):
+    d = OrderedDict()
+    with open(nbest_file) as f:
+        for line in f:
+            a = line.split()
+            label = '-'.join(a[0].split('-')[0:-1])
+            val = type(' '.join(a[1:]))
+
+            d.setdefault(label, [])
+            d[label].append(val)
+
+    return d
+
+
 # compare two word sequence (array), and return the error number
 def TxtScore(hypos, refer, special_word=None):
     """
@@ -622,6 +637,7 @@ def TxtScore(hypos, refer, special_word=None):
     return res
 
 
+
 # calculate the WER given best file
 def CmpWER(best, temp, log_str_or_io=None, sentence_process_fun=None):
     nLine = 0
@@ -659,8 +675,8 @@ def CmpWER(best, temp, log_str_or_io=None, sentence_process_fun=None):
         if fout is not None:
             fout.write('[{}] {}\n'.format(nLine, a[0]))
             fout.write('[nDist={0}] [{0}/{1}] [{2}/{3}]\n'.format(res['err'], res['word'], nTotalErr, nTotalWord))
-            fout.write('Input: ' + ''.join([i + ' ' for i in res['target'][1:-1]]) + '\n')
-            fout.write('Templ: ' + ''.join([i + ' ' for i in res['base'][1:-1]]) + '\n')
+            fout.write('refer: ' + ''.join([i + ' ' for i in res['refer'][1:-1]]) + '\n')
+            fout.write('hypos: ' + ''.join([i + ' ' for i in res['hypos'][1:-1]]) + '\n')
             fout.flush()
 
         nLine += 1
@@ -764,40 +780,23 @@ def CmpOracleWER(nbest, refer, log_str_or_io=None, sentence_process_fun=None, pr
 
 # given the score get the 1-best result
 def GetBest(nbest, score, best):
-    f = open(nbest, 'rt') if isinstance(nbest, str) else nbest
-    fout = open(best, 'wt') if isinstance(best, str) else best
+    """
+    :param nbest: nbest file
+    :param score: score file, if None, then select the first sentence
+    :param best: output the best file
+    """
 
-    nline = 0
-    bestscore = 0
-    bestlabel = ''
-    bestsent = ''
-    lastlabel = ''
-    for line in f:
-        a = line.split()
-        head = a[0]
-        sent = ' '.join(a[1:])
-        
-        idx = head.rindex('-')
-        label = head[0:idx]
-        num = int(head[idx + 1:])
-        if label != lastlabel:  # a new utterance
-            if nline > 0:
-                fout.write('{} {}\n'.format(bestlabel, bestsent))
-            bestscore = score[nline]
-            bestlabel = label
-            bestsent = sent
-            lastlabel = label
-        else:
-            if score[nline] < bestscore:
-                bestscore = score[nline]
-                bestsent = sent
-        nline += 1
-    fout.write('{} {}\n'.format(bestlabel, bestsent))
+    nbest_dict = nbest_read_to_dict(nbest)
+    score_dict = None if score is None else nbest_read_to_dict(score)
 
-    if isinstance(nbest, str):
-        f.close()
-    if isinstance(best, str):
-        fout.close()
+    with open(best, 'wt') as fout:
+        for label, vals in nbest_dict.items():
+            if score_dict is not None:
+                s = score_dict[label]
+                i = np.argmin(s)
+            else:
+                i = 0
+            fout.write('{} {}\n'.format(label, vals[i]))
 
 
 # load the score file
