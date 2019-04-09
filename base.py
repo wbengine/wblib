@@ -847,6 +847,16 @@ def WriteScore(fname, s, label=[]):
                 f.write('{}\t{}\n'.format(label[i], s[i]))
 
 
+# write nbest
+def WriteNbest(fname, nbest_list, label=None):
+    with open(fname, 'wt') as f:
+        for i in range(len(nbest_list)):
+            if label is None:
+                f.write('line={}\t{}\n'.format(i, nbest_list[i]))
+            else:
+                f.write('{}\t{}\n'.format(label[i], nbest_list[i]))
+
+
 # cmp interpolate
 def ScoreInterpolate(s1, s2, w):
     s1 = LoadScore(s1) if isinstance(s1, str) else s1

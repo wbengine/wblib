@@ -52,7 +52,7 @@ class NBest(object):
         new_best_file.seek(0)
         return new_best_file
 
-    def wer(self, lmscale=np.linspace(0.1, 1.0, 10), rm_unk=False, sentence_process_fun=None):
+    def wer(self, lmscale=np.linspace(0.1, 1.0, 10), rm_unk=False, sentence_process_fun=None, special_word='<?>'):
         """
         compute the WER
         Returns:
@@ -84,7 +84,7 @@ class NBest(object):
                 [totale, totalw, wer] = wb.CmpWER(best_file, self.trans,
                                                   log_str_or_io=log_file,
                                                   sentence_process_fun=sentence_process_fun,
-                                                  special_word='<?>')
+                                                  special_word=special_word)
 
                 self.wer_per_scale.append([ac, lm, wer])
                 # print('acscale={}\tlmscale={}\twer={}\n'.format(acscale, lmscale, wer))
