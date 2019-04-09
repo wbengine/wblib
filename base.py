@@ -554,82 +554,90 @@ def TxtScore(hypos, refer, special_word=None):
         return res
 
     go_nexts = [[0, 1], [1, 1], [1, 0]]
-    score_table = [([['none', 10000, [-1, -1], '', '']] * refer_len) for i in range(hypos_len)]
+    score_table = [([['none', 10000, [-1, -1], '', '']] * refer_len) for hypos_cur in range(hypos_len)]
     score_table[0][0] = ['none', 0, [-1, -1], '<s>', '<s>']  # [error-type, note distance, best previous]
 
-    for i in range(hypos_len - 1):
-        for j in range(refer_len):
+    for hypos_cur in range(hypos_len - 1):
+        for refer_cur in range(refer_len):
+
             for go_nxt in go_nexts:
-                nexti = i + go_nxt[0]
-                nextj = j + go_nxt[1]
-                if nexti >= hypos_len or nextj >= refer_len:
+                hypos_next = hypos_cur + go_nxt[0]
+                refer_next = refer_cur + go_nxt[1]
+                if hypos_next >= hypos_len or refer_next >= refer_len:
                     continue
 
-                next_score = score_table[i][j][1]
+                next_score = score_table[hypos_cur][refer_cur][1]
                 next_state = 'none'
                 next_hypos = ''
                 next_refer = ''
 
                 if go_nxt == [0, 1]:
-                    next_state = 'del'
-                    next_score += 1
-                    next_hypos = '*' + ' ' * len(refer_words[nextj])
-                    next_refer = '*' + refer_words[nextj]
+                    if special_word is not None and refer_words[refer_next] == special_word:
+                        next_state = 'none'
+                        next_score += 0
+                        next_hypos = ' ' * len(refer_words[refer_next])
+                        next_refer = refer_words[refer_next]
+
+                    else:
+                        next_state = 'del'
+                        next_score += 1
+                        next_hypos = '*' + ' ' * len(refer_words[refer_next])
+                        next_refer = '*' + refer_words[refer_next]
 
                 elif go_nxt == [1, 0]:
                     next_state = 'ins'
                     next_score += 1
-                    next_hypos = '^' + hypos_words[nexti]
-                    next_refer = '^' + ' ' * len(hypos_words[nexti])
+                    next_hypos = '^' + hypos_words[hypos_next]
+                    next_refer = '^' + ' ' * len(hypos_words[hypos_next])
 
                 else:
-                    if special_word is not None and refer_words[nextj] == special_word:
-                        for ii in range(i+1, hypos_len-1):
+                    if special_word is not None and refer_words[refer_next] == special_word:
+                        for ii in range(hypos_cur+1, hypos_len-1):
                             next_score += 0  # can match any words, without penalty
                             next_state = 'none'
                             next_refer = special_word
-                            next_hypos = ' '.join(hypos_words[i+1:ii+1])
+                            next_hypos = ' '.join(hypos_words[hypos_cur+1:ii+1])
 
-                            if next_score < score_table[ii][nextj][1]:
-                                score_table[ii][nextj] = [next_state, next_score, [i, j], next_hypos, next_refer]
+                            if next_score < score_table[ii][refer_next][1]:
+                                score_table[ii][refer_next] = [next_state, next_score, [hypos_cur, refer_cur], next_hypos, next_refer]
 
                         # avoid add too many times
                         next_score = 10000
 
                     else:
-                        next_hypos = hypos_words[nexti]
-                        next_refer = refer_words[nextj]
-                        if hypos_words[nexti] != refer_words[nextj]:
+                        next_hypos = hypos_words[hypos_next]
+                        next_refer = refer_words[refer_next]
+                        if hypos_words[hypos_next] != refer_words[refer_next]:
                             next_state = 'rep'
                             next_score += 1
                             next_hypos = '~' + next_hypos
                             next_refer = '~' + next_refer
 
-                if next_score < score_table[nexti][nextj][1]:
-                    score_table[nexti][nextj] = [next_state, next_score, [i, j], next_hypos, next_refer]
+                if next_score < score_table[hypos_next][refer_next][1]:
+                    score_table[hypos_next][refer_next] = [next_state, next_score, [hypos_cur, refer_cur], next_hypos, next_refer]
 
     res['err'] = score_table[hypos_len - 1][refer_len - 1][1]
     res['word'] = refer_len - 2
-    i = hypos_len - 1
-    j = refer_len - 1
+    hypos_cur = hypos_len - 1
+    refer_cur = refer_len - 1
     refer_fmt_words = []
     hypos_fmt_words = []
-    while i >= 0 and j >= 0:
-        res[score_table[i][j][0]] += 1  # add the del/rep/ins error number
-        hypos_fmt_words.append(score_table[i][j][3])
-        refer_fmt_words.append(score_table[i][j][4])
-        [i, j] = score_table[i][j][2]
+    while hypos_cur >= 0 and refer_cur >= 0:
+        res[score_table[hypos_cur][refer_cur][0]] += 1  # add the del/rep/ins error number
+        hypos_fmt_words.append(score_table[hypos_cur][refer_cur][3])
+        refer_fmt_words.append(score_table[hypos_cur][refer_cur][4])
+        [hypos_cur, refer_cur] = score_table[hypos_cur][refer_cur][2]
 
     refer_fmt_words.reverse()
     hypos_fmt_words.reverse()
 
     # format the hypos and refer
     assert len(refer_fmt_words) == len(hypos_fmt_words)
-    for i in range(len(refer_fmt_words)):
-        w = max(len(refer_fmt_words[i]), len(hypos_fmt_words[i]))
+    for hypos_cur in range(len(refer_fmt_words)):
+        w = max(len(refer_fmt_words[hypos_cur]), len(hypos_fmt_words[hypos_cur]))
         fmt = '{:>%d}' % w
-        refer_fmt_words[i] = fmt.format(refer_fmt_words[i])
-        hypos_fmt_words[i] = fmt.format(hypos_fmt_words[i])
+        refer_fmt_words[hypos_cur] = fmt.format(refer_fmt_words[hypos_cur])
+        hypos_fmt_words[hypos_cur] = fmt.format(hypos_fmt_words[hypos_cur])
 
     res['refer'] = refer_fmt_words[1:-1]
     res['hypos'] = hypos_fmt_words[1:-1]
