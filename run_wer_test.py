@@ -22,11 +22,11 @@ class Test(unittest.TestCase):
 
     def test(self):
 
-        # os.system('python ./run_wer.py --best {} --refer {} --filter ./filters/wer_hyp_filter > {}'.format(
-        #     self.best, self.refer, self.log
-        # ))
+        os.system('python ./run_wer.py --best {} --refer {} --filter ./filters/wer_hyp_filter > {}'.format(
+            self.best, self.refer, self.log
+        ))
 
-        os.system('python ./run_wer.py --nbest {} --refer {} --filter ./filters/wer_hyp_filter > {}'.format(
+        os.system('python ./run_wer.py --nbest {} --refer {} --filter ./filters/wer_hyp_filter --oracle > {}'.format(
             self.nbest, self.refer, self.log
         ))
 

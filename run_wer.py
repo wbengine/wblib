@@ -22,30 +22,43 @@ def main():
     parser.add_argument('--refer', help='kaldi 格式的 refer 文件，格式与best相同')
     parser.add_argument('--filter', help='a filter file used in sed, filter被作用于best和refer', default=None)
     parser.add_argument('--special_word', help='a special word, refer中的 special word 可以用来匹配任意多的词', default='<?>')
+    parser.add_argument('--oracle', action='store_true', help='如果指定，则计算oracle WER')
     args = parser.parse_args()
 
     best_file = args.best
+    nbest_file = args.nbest
     refer_file = args.refer
 
     assert base.exists(refer_file), 'cannot find refer file %s' % refer_file
 
-    if best_file is None:
-        print('nbest to 1-best...')
-        best_file = os.path.splitext(args.nbest)[0] + '.best'
-        base.GetBest(args.nbest, args.score, best_file)
-
     if args.filter is not None:
         print('run sed filter ...')
-        base.filter_text(best_file, best_file + '.filter', args.filter)
-        base.filter_text(refer_file, refer_file + '.filter', args.filter)
+        if best_file is not None:
+            base.filter_text(best_file, best_file + '.filter', args.filter)
+            best_file += '.filter'
+        if nbest_file is not None:
+            base.filter_text(nbest_file, nbest_file + '.filter', args.filter)
+            nbest_file += '.filter'
 
-        best_file += '.filter'
+        base.filter_text(refer_file, refer_file + '.filter', args.filter)
         refer_file += '.filter'
 
-    print('compute WER')
-    print('best = %s' % best_file)
-    print('refer = %s' % refer_file)
-    err, word, wer = base.CmpWER(best_file, refer_file, sys.stdout, special_word=args.special_word)
+    if args.oracle:
+        print('compute Oracle WER')
+        print('nbest = %s' % nbest_file)
+        print('refer = %s' % refer_file)
+
+        err, word, wer = base.CmpOracleWER(nbest_file, refer_file, sys.stdout, special_word=args.special_word)
+    else:
+        if best_file is None:
+            print('nbest to 1-best...')
+            best_file = os.path.splitext(args.nbest)[0] + '.best'
+            base.GetBest(args.nbest, args.score, best_file)
+
+        print('compute WER')
+        print('best = %s' % best_file)
+        print('refer = %s' % refer_file)
+        err, word, wer = base.CmpWER(best_file, refer_file, sys.stdout, special_word=args.special_word)
 
     print('\n[Finished]')
     print('best = %s' % args.best)
@@ -55,7 +68,10 @@ def main():
     print('filter = %s' % args.filter)
     print('errs = %d' % err)
     print('words = %d' % word)
-    print('wer = %.8f' % wer)
+    if args.oracle:
+        print('oracle-wer = %.8f' % wer)
+    else:
+        print('wer = %.8f' % wer)
 
 
 if __name__ == '__main__':

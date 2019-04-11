@@ -712,11 +712,11 @@ def CmpCER(best, temp, log_str_or_io=None):
 
 
 def TxtScoreForPool(input_tuple):
-    # input_tuple = (label, target, temp_sent)
-    return input_tuple[0], TxtScore(input_tuple[1], input_tuple[2])
+    # input_tuple = (label, target, temp_sent, special_word)
+    return input_tuple[0], TxtScore(*input_tuple[1:])
 
 
-def CmpOracleWER(nbest, refer, log_str_or_io=None, sentence_process_fun=None, processes=4):
+def CmpOracleWER(nbest, refer, log_str_or_io=None, sentence_process_fun=None, processes=4, special_word=None):
     import tqdm
     from multiprocessing import Pool
 
@@ -747,7 +747,7 @@ def CmpOracleWER(nbest, refer, log_str_or_io=None, sentence_process_fun=None, pr
                 target = sentence_process_fun(target)
                 temp_sent = sentence_process_fun(temp_sent)
 
-            yield label, target, temp_sent
+            yield label, target, temp_sent, special_word
 
     total_lines = len(f1.readlines())
     f1.seek(0)
