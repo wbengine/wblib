@@ -1503,6 +1503,6 @@ def generate_wp(wp_tools_dir, text_list_or_file, bpe_codes, vocabulary=None, out
         pout, _ = p.communicate('\n'.join(text_list_or_file))
 
     if pout:
-        return pout.decode().strip().split('\n')
+        return pout.decode().rstrip().split('\n')
     else:
         return ""
