@@ -1500,9 +1500,9 @@ def generate_wp(wp_tools_dir, text_list_or_file, bpe_codes, vocabulary=None, out
     else:
         # a text list
         p = subprocess.Popen(cmd_str, stdin=subprocess.PIPE, stdout=stdout, shell=True)
-        pout, _ = p.communicate('\n'.join(text_list_or_file))
+        pout, _ = p.communicate('\n'.join(text_list_or_file) + '\n')
 
     if pout:
-        return pout.decode().rstrip().split('\n')
+        return pout.decode().split('\n')[0:-1]  # as the last position is '\n'
     else:
         return ""
