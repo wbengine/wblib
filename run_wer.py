@@ -53,7 +53,7 @@ def main():
         if best_file is None:
             print('nbest to 1-best...')
             best_file = os.path.splitext(args.nbest)[0] + '.best'
-            base.GetBest(args.nbest, args.score, best_file)
+            base.GetBest(nbest_file, args.score, best_file)
 
         print('compute WER')
         print('best = %s' % best_file)
