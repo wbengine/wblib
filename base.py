@@ -799,7 +799,7 @@ def GetBest(nbest, score, best):
     if score is None:
         score_dict = None
     elif isinstance(score, str) and os.path.isfile(score):
-        score_dict = nbest_read_to_dict(score)
+        score_dict = nbest_read_to_dict(score, type=float)
     else:
         # a list of scores
         score_dict = OrderedDict()
